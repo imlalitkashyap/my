@@ -1,0 +1,314 @@
+
+HTML_TEMPLATE = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 File Organizer - Professional View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .category-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .category-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .file-item {
+            transition: all 0.2s ease;
+        }
+        
+        .file-item:hover {
+            background-color: #f8fafc;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .category-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .category-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .search-box {
+            transition: all 0.3s ease;
+        }
+        
+        .search-box:focus {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-2">📁 Professional File Organizer</h1>
+                <p class="text-xl opacity-90">Beautifully organized files for {{ user_name }}</p>
+                <p class="text-sm opacity-75 mt-2">Generated on {{ generated_time }}</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Section -->
+    <section class="py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="stats-card text-white p-6 rounded-xl text-center">
+                    <i class="fas fa-files-o text-3xl mb-3"></i>
+                    <h3 class="text-2xl font-bold">{{ total_files }}</h3>
+                    <p class="opacity-90">Total Files</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg text-center card-hover">
+                    <i class="fas fa-folder text-3xl text-blue-500 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ category_stats|length }}</h3>
+                    <p class="text-gray-600">Categories</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg text-center card-hover">
+                    <i class="fas fa-clock text-3xl text-green-500 mb-3"></i>
+                    <h3 class="text-2xl font-bold text-gray-800">Auto</h3>
+                    <p class="text-gray-600">Organized</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="py-4">
+        <div class="container mx-auto px-4">
+            <div class="max-w-md mx-auto">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="🔍 Search files..." 
+                           class="search-box w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Navigation -->
+    <section class="py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button onclick="showAllCategories()" class="category-btn active px-6 py-3 bg-white rounded-lg shadow-md font-medium">
+                    <i class="fas fa-th-large mr-2"></i>All Categories
+                </button>
+                {% for category, stats in category_stats.items() %}
+                <button onclick="showCategory('{{ category }}')" class="category-btn px-6 py-3 bg-white rounded-lg shadow-md font-medium hover:bg-gray-50">
+                    <span class="mr-2">{{ stats.icon }}</span>{{ category.title() }} ({{ stats.count }})
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- File Categories -->
+    <main class="container mx-auto px-4 pb-12">
+        <div id="allCategories">
+            {% for category, files in organized_files.items() %}
+            {% if files %}
+            <div class="category-section active mb-8" id="category-{{ category }}">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6">
+                        <h2 class="text-2xl font-bold flex items-center">
+                            <span class="text-3xl mr-3">{{ categories[category].icon }}</span>
+                            {{ category.title() }} Files
+                            <span class="ml-auto bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">{{ files|length }} files</span>
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid gap-3">
+                            {% for file in files %}
+                            <div class="file-item p-4 border border-gray-200 rounded-lg hover:shadow-md" data-filename="{{ file.name.lower() }}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center flex-1">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                            {% if category == 'videos' %}
+                                                <i class="fas fa-play text-blue-600"></i>
+                                            {% elif category == 'pdfs' %}
+                                                <i class="fas fa-file-pdf text-red-600"></i>
+                                            {% elif category == 'documents' %}
+                                                <i class="fas fa-file-alt text-blue-600"></i>
+                                            {% elif category == 'images' %}
+                                                <i class="fas fa-image text-green-600"></i>
+                                            {% elif category == 'audio' %}
+                                                <i class="fas fa-music text-purple-600"></i>
+                                            {% elif category == 'archives' %}
+                                                <i class="fas fa-file-archive text-orange-600"></i>
+                                            {% else %}
+                                                <i class="fas fa-file text-gray-600"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="font-medium text-gray-800 mb-1">{{ file.name }}</h3>
+                                            <p class="text-sm text-gray-500">
+                                                <i class="fas fa-folder-open mr-1"></i>{{ file.path }}
+                                                {% if file.size != 'Unknown' %}
+                                                <span class="ml-3"><i class="fas fa-weight mr-1"></i>{{ file.size }}</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        {% if category == 'videos' %}
+                                        <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-play mr-1"></i>Play
+                                        </button>
+                                        {% elif category == 'pdfs' %}
+                                        <button class="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors">
+                                            <i class="fas fa-eye mr-1"></i>View
+                                        </button>
+                                        {% else %}
+                                        <button class="px-3 py-1 bg-gray-500 text-white rounded-md text-sm hover:bg-gray-600 transition-colors">
+                                            <i class="fas fa-download mr-1"></i>Open
+                                        </button>
+                                        {% endif %}
+                                        <button class="px-3 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 transition-colors">
+                                            <i class="fas fa-share mr-1"></i>Share
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">🤖 Generated by Professional File Organizer Bot</p>
+            <p class="text-sm text-gray-400">Telegram Bot for Beautiful File Organization</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <button onclick="downloadHTML()" class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-download mr-2"></i>Download HTML
+                </button>
+                <button onclick="printPage()" class="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-print mr-2"></i>Print
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const fileItems = document.querySelectorAll('.file-item');
+            
+            fileItems.forEach(item => {
+                const filename = item.getAttribute('data-filename');
+                if (filename.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Category navigation
+        function showAllCategories() {
+            document.querySelectorAll('.category-section').forEach(section => {
+                section.classList.add('active');
+            });
+            updateActiveButton(event.target);
+        }
+
+        function showCategory(categoryName) {
+            document.querySelectorAll('.category-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById('category-' + categoryName).classList.add('active');
+            updateActiveButton(event.target);
+        }
+
+        function updateActiveButton(activeBtn) {
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            activeBtn.classList.add('active');
+        }
+
+        // Utility functions
+        function downloadHTML() {
+            const element = document.createElement('a');
+            const file = new Blob([document.documentElement.outerHTML], {type: 'text/html'});
+            element.href = URL.createObjectURL(file);
+            element.download = 'organized_files.html';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        function printPage() {
+            window.print();
+        }
+
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add loading animation
+        window.addEventListener('load', function() {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease-in-out';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>'''
+
+create_file(f"{project_name}/templates/file_organizer.html", HTML_TEMPLATE)
+
